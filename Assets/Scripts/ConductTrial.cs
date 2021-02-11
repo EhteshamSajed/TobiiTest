@@ -67,11 +67,13 @@ public class ConductTrial : MonoBehaviour
     List<PupilDataTrial> pupilDataTrials = new List<PupilDataTrial>();
     List<PupilDataBaseline> pupilDataBaselines = new List<PupilDataBaseline>();
     static DBController dBController;
+    static ParticipantsController participantsController;
     Text questionNumberText;
     Text remainingTimeText;
     Slider timerSlider;
     Button savedStudiesCancelButton;
     ScrollRect savedStudiesScrollRect;
+    Text timerText;
 
     // Start is called before the first frame update
     void Awake()
@@ -84,6 +86,7 @@ public class ConductTrial : MonoBehaviour
         if (eyeTracker != null)
             eyeTracker.GazeDataReceived += onGazeDataReceived;
         dBController = new DBController(DBController.LoadParticipantsList());
+        participantsController = new ParticipantsController();
         initUI();
     }
     void initUI()
@@ -97,24 +100,30 @@ public class ConductTrial : MonoBehaviour
         savedStudiesCancelButton = savedStudiesPanel.transform.Find("Cancel Button").GetComponent<Button>();
         savedStudiesScrollRect = savedStudiesPanel.transform.Find("Scroll View").GetComponent<ScrollRect>();
         savedStudiesCancelButton.onClick.AddListener(() => savedStudiesPanel.SetActive(false));
-        trialListButton.onClick.AddListener(()=> {
+        trialListButton.onClick.AddListener(() =>
+        {
             AddItemsInSavedStudiesScrollRect(dBController);
             savedStudiesPanel.gameObject.SetActive(true);
         });
-        endPanel.transform.Find("CloseEndPanel Button").GetComponent<Button>().onClick.AddListener(() => {
+        endPanel.transform.Find("CloseEndPanel Button").GetComponent<Button>().onClick.AddListener(() =>
+        {
             endPanel.SetActive(false);
             introPanel.SetActive(true);
         });
+        timerText = hudPanel.transform.Find("Timer Text").GetComponent<Text>();
     }
     void AddItemsInSavedStudiesScrollRect(DBController dBController)
     {
         List<TrialsRecord> trialsRecords = new List<TrialsRecord>();
-        dBController.participantsRecordList.ForEach((participantsRecord)=>{
+        dBController.participantsRecordList.ForEach((participantsRecord) =>
+        {
             trialsRecords.AddRange(participantsRecord.trialsRecords);
         });
-        trialsRecords.Sort((a,b)=>a.id.CompareTo(b.id));
-        foreach (Transform item in savedStudiesScrollRect.content.transform){
-            if(item.gameObject.activeSelf){
+        trialsRecords.Sort((a, b) => a.id.CompareTo(b.id));
+        foreach (Transform item in savedStudiesScrollRect.content.transform)
+        {
+            if (item.gameObject.activeSelf)
+            {
                 Destroy(item.gameObject);
             }
         }
@@ -198,15 +207,19 @@ public class ConductTrial : MonoBehaviour
         }
         else
         {
-            participant = new Participant(id, name);
-            Debug.Log("new participant created");
+            participant = participantsController.GetParticipantByName(name);
+            if (participant == null)
+            {
+                participant = new Participant(id, name);
+                Debug.Log("new participant created");
+            }
             trialType = (TrialType)trialTypeDropdown.value;
         }
     }
     void LoadTrialForObserver(long id)
     {
         Debug.Log(id);
-        savedStudiesPanel.SetActive(false);        
+        savedStudiesPanel.SetActive(false);
         trialIdInputField.text = id.ToString();
     }
     public void StartTest()
@@ -278,6 +291,7 @@ public class ConductTrial : MonoBehaviour
         {
             timeLeft -= Time.deltaTime;
             timerSlider.value = timeLeft / durationForBaseline;
+            timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + durationForBaseline.ToString();
             yield return null;
         }
         /*Debug.Log("Time up! " + System.DateTime.Now);
@@ -302,6 +316,7 @@ public class ConductTrial : MonoBehaviour
         {
             timeLeft -= Time.deltaTime;
             timerSlider.value = timeLeft / durationForQuestion;
+            timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + durationForQuestion.ToString();
             yield return null;
         }
         //Debug.Log("Time up! " + System.DateTime.Now);
