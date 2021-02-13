@@ -7,16 +7,16 @@ public class Trial
     //public int observerId;    
     public PupilDataBaseline[] pupilDataBaselines;
     public PupilDataTrial[] pupilDataTrials;
-    public TrialType trialType;
+    public FeedbackType feedbackType;
     public long trialId;
     public Observer observer;
 
-    public Trial(long _trialId, TrialType _trialType, PupilDataBaseline[] _pupilDataBaselines, PupilDataTrial[] _pupilDataTrials){
+    public Trial(long _trialId, FeedbackType _trialType, PupilDataBaseline[] _pupilDataBaselines, PupilDataTrial[] _pupilDataTrials){
         trialId = _trialId;
-        trialType = _trialType;
+        feedbackType = _trialType;
         pupilDataBaselines = _pupilDataBaselines;
         pupilDataTrials = _pupilDataTrials;
     }
 }
 
-public enum TrialType{Blind, Feedback}
+public enum FeedbackType{Single, Double}

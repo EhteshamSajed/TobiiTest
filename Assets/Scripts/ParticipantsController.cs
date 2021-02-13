@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 public class ParticipantsController
 {
-    List<Participant> participants;
-
+    //  todo  handle participants id internally
+    static List<Participant> participants;
     public ParticipantsController()
     {
         participants = new List<Participant>();
@@ -26,5 +26,11 @@ public class ParticipantsController
             return;
         }
         participants.Add(_participant);
+    }
+    public static void SaveParticipant(Participant _participant)
+    {
+        string jsonString = JsonUtility.ToJson(_participant);
+        Debug.Log(jsonString);
+        //  save the participant into a file name _participant.id
     }
 }

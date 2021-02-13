@@ -83,6 +83,7 @@
      <Compile Include="Assets\TobiiPro\VR\Scripts\Utility\VRCalibration.cs" />
      <Compile Include="Assets\Scripts\TobiiTest.cs" />
      <Compile Include="Assets\Scripts\DummyEyetracker\DummyEyeTracker.cs" />
+     <Compile Include="Assets\Scripts\Question.cs" />
      <None Include="Assets\TobiiPro\Examples\VRDemo\Scenes\readme.txt" />
      <None Include="Assets\TobiiPro\Examples\VRDemo\readme.txt" />
      <None Include="Assets\TobiiPro\tobii_pro_prefabs.txt" />

@@ -49,11 +49,13 @@ public class ConductTrial : MonoBehaviour
     [SerializeField]
     string[] questionStrings;
     [SerializeField]
+    Question[] questions;
+    [SerializeField]
     float durationForQuestion;
     [SerializeField]
     float durationForBaseline;
     [SerializeField]
-    TrialType trialType;
+    FeedbackType feedbackType;
     [SerializeField]
     Sprite[] crossTickSprites;
     Observer observer;
@@ -210,10 +212,10 @@ public class ConductTrial : MonoBehaviour
             participant = participantsController.GetParticipantByName(name);
             if (participant == null)
             {
-                participant = new Participant(id, name);
+                participant = new Participant(DateTimeToUnixTimeStamp(System.DateTime.Now).ToString(), name);
                 Debug.Log("new participant created");
             }
-            trialType = (TrialType)trialTypeDropdown.value;
+            feedbackType = (FeedbackType)trialTypeDropdown.value;
         }
     }
     void LoadTrialForObserver(long id)
@@ -236,9 +238,14 @@ public class ConductTrial : MonoBehaviour
     void NextQuestion()
     {
         introPanel.SetActive(false);
-        if (questionId < questionStrings.Length)
+        // if (questionId < questionStrings.Length)
+        // {
+        //     questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questionStrings.Length;
+        //     StartCoroutine("ShowBaselinePanel");
+        // }
+        if (questionId < questions.Length)
         {
-            questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questionStrings.Length;
+            questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questions.Length;
             StartCoroutine("ShowBaselinePanel");
         }
         else
@@ -250,13 +257,15 @@ public class ConductTrial : MonoBehaviour
             }
             else
             {
-                Trial trial = new Trial(DateTimeToUnixTimeStamp(System.DateTime.Now), trialType, pupilDataBaselines.ToArray(), pupilDataTrials.ToArray());
+                Trial trial = new Trial(DateTimeToUnixTimeStamp(System.DateTime.Now), feedbackType, pupilDataBaselines.ToArray(), pupilDataTrials.ToArray());
                 participant.AddTrial(trial);
-                string jsonString = JsonUtility.ToJson(participant);
-                Debug.Log(jsonString);
+                participantsController.AddParticipant(participant);
+                ParticipantsController.SaveParticipant(participant);
 
-                TrialsRecord trialsRecord = new TrialsRecord(trial.trialId, trialType, isObserver);
-                ParticipantsRecord participantsRecord = new ParticipantsRecord(participant.participantName, participant.participantsId);
+                TrialsRecord trialsRecord = new TrialsRecord(trial.trialId, feedbackType, isObserver);
+                ParticipantsRecord participantsRecord = dBController.GetParticipantsRecordByName(participant.participantName);
+                if (participantsRecord == null)
+                    participantsRecord = new ParticipantsRecord(participant.participantName, participant.participantsId);
                 participantsRecord.AddTrialsRecord(trialsRecord);
                 dBController.AddParticipantsRecord(participantsRecord);
                 dBController.SaveParticipantsList();
@@ -309,7 +318,7 @@ public class ConductTrial : MonoBehaviour
         participantsPanel.SetActive(true);
         baselinePanel.SetActive(false);
         mode = Mode.Normal;
-        participantsPanel.transform.Find("Question Text").GetComponent<Text>().text = questionStrings[questionId];
+        participantsPanel.transform.Find("Question Text").GetComponent<Text>().text = questions[questionId].questionText;
         timerSlider.value = 1;
         float timeLeft = durationForQuestion;
         while (timeLeft > 0 && mode == Mode.Normal)
@@ -357,7 +366,8 @@ public class ConductTrial : MonoBehaviour
         Debug.Log(participantAnswer);
         mode = Mode.None;
         long durationInTicks = System.DateTime.Now.Ticks - startTicks;
-        PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questionStrings[questionId], participantAnswer);
+        //PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questionStrings[questionId], participantAnswer);
+        PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questions[questionId], participantAnswer);
         diameterList.Clear();
         pupilDataTrials.Add(pupilDataTrial);
     }

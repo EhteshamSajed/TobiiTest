@@ -6,9 +6,11 @@ using UnityEngine;
 public class DBController
 {
     public List<ParticipantsRecord> participantsRecordList = new List<ParticipantsRecord>();
-    public DBController(){
+    public DBController()
+    {
     }
-    public DBController(List<ParticipantsRecord> _participantsRecordList){
+    public DBController(List<ParticipantsRecord> _participantsRecordList)
+    {
         participantsRecordList = _participantsRecordList;
     }
     public static DBController LoadDBController()
@@ -43,12 +45,17 @@ public class DBController
             participantsRecordList.Add(participantsRecord);
         }
     }
+    public ParticipantsRecord GetParticipantsRecordByName(string name)
+    {
+        return participantsRecordList.Find(participantsRecord => participantsRecord.participantName == name);
+    }
 
-    public static void TestJSON(){
+    public static void TestJSON()
+    {
         ParticipantsRecord participantsRecord1 = new ParticipantsRecord("Sajed", "1");
-        participantsRecord1.AddTrialsRecord(new TrialsRecord(123456, TrialType.Blind, true));
+        participantsRecord1.AddTrialsRecord(new TrialsRecord(123456, FeedbackType.Single, true));
         ParticipantsRecord participantsRecord2 = new ParticipantsRecord("Arup", "2");
-        participantsRecord2.AddTrialsRecord(new TrialsRecord(987654, TrialType.Feedback, false));
+        participantsRecord2.AddTrialsRecord(new TrialsRecord(987654, FeedbackType.Double, false));
 
         DBController dBController = new DBController();
         dBController.participantsRecordList.Add(participantsRecord1);

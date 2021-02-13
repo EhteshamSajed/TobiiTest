@@ -1661,9 +1661,20 @@ MonoBehaviour:
   questionStrings:
   - Is 2+2 greater than 5?
   - Is 2+2 greater than 3?
+  questions:
+  - questionText: Is the number shown in circle greater than 5?
+    circleString: 3
+    condition: 0
+    realAnswer: 0
+    calculateBaseline: 1
+  - questionText: Is the number shown in circle greater than 5?
+    circleString: 8
+    condition: 0
+    realAnswer: 0
+    calculateBaseline: 0
   durationForQuestion: 2
   durationForBaseline: 2
-  trialType: 0
+  feedbackType: 0
   crossTickSprites:
   - {fileID: -5296726963369395002, guid: e00c0a32d4a951945920de0742433ac9, type: 3}
   - {fileID: 5924648078478818265, guid: e00c0a32d4a951945920de0742433ac9, type: 3}
@@ -5127,9 +5138,9 @@ MonoBehaviour:
   m_Value: 0
   m_Options:
     m_Options:
-    - m_Text: Blind
+    - m_Text: Single
       m_Image: {fileID: 0}
-    - m_Text: Feedback
+    - m_Text: Double
       m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7694,7 +7705,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Blind
+  m_Text: Single
 --- !u!222 &2110951807
 CanvasRenderer:
   m_ObjectHideFlags: 0
