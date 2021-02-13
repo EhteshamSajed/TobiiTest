@@ -6,38 +6,42 @@ public class PupilDataTrial : PupilData
     //  add a new variable question type Question
     public Question question;
     //public string questionString;   //  to be moved too Question class
-    public int perticipantAnswer;   //  use Question.Answer data type
+    public Answer participantAnswer;   //  use Question.Answer data type
     //public int realAnswer;   //  to be moved too Question class
     public int observersPrediction;
+    public long elapseTicksToAnswer;
     public PupilDataTrial(
         float[] _pupilDiameter,
         int _stimuliId,
         long _startTimeStamp,
         long _durationInTicks,
         Question _question,
-        int _perticipantAnswer) : base(_pupilDiameter,
+        Answer _participantAnswer,
+        long _elapseTicksToAnswer) : base(_pupilDiameter,
                                _stimuliId,
                                _startTimeStamp,
                                _durationInTicks)
     {
         question = _question;
+        participantAnswer = _participantAnswer;
+        elapseTicksToAnswer = _elapseTicksToAnswer;
     }
-
     public PupilDataTrial(
         float[] _pupilDiameter,
         int _stimuliId,
         long _startTimeStamp,
         long _durationInTicks,
         Question _question,
-        int _perticipantAnswer,
+        Answer _participantAnswer,
+        long _elapseTicksToAnswer,
         int _observersPrediction) : this(_pupilDiameter,
                                _stimuliId,
                                _startTimeStamp,
                                _durationInTicks,
                                _question,
-                               _perticipantAnswer)
+                               _participantAnswer,
+                               _elapseTicksToAnswer)
     {
-        perticipantAnswer = _perticipantAnswer;
         observersPrediction = _observersPrediction;
     }
 }

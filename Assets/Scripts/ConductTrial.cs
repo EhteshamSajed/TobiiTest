@@ -64,7 +64,6 @@ public class ConductTrial : MonoBehaviour
     float currentPupilDiameter;
     long startTimeStamp;
     long startTicks;
-    float timeLeft;
     int questionId = 0;
     List<PupilDataTrial> pupilDataTrials = new List<PupilDataTrial>();
     List<PupilDataBaseline> pupilDataBaselines = new List<PupilDataBaseline>();
@@ -76,6 +75,7 @@ public class ConductTrial : MonoBehaviour
     Button savedStudiesCancelButton;
     ScrollRect savedStudiesScrollRect;
     Text timerText;
+    Text circleText;
 
     // Start is called before the first frame update
     void Awake()
@@ -95,10 +95,10 @@ public class ConductTrial : MonoBehaviour
     {
         isObserverToggle.onValueChanged.AddListener((isObserver) => ToggleParticipantMode(isObserver));
         proceedButton.onClick.AddListener(StartTest);
-        button1.onClick.AddListener(() => SaveAnswer(1));
-        button2.onClick.AddListener(() => SaveAnswer(2));
+        button1.onClick.AddListener(() => SaveAnswer(Answer.Yes));
+        button2.onClick.AddListener(() => SaveAnswer(Answer.No));
         questionNumberText = hudPanel.transform.Find("Question Number Text").GetComponent<Text>();
-        timerSlider = hudPanel.transform.Find("Timer Slider").GetComponent<Slider>();
+        timerSlider = hudPanel.transform.Find("Timer Panel").Find("Timer Slider").GetComponent<Slider>();
         savedStudiesCancelButton = savedStudiesPanel.transform.Find("Cancel Button").GetComponent<Button>();
         savedStudiesScrollRect = savedStudiesPanel.transform.Find("Scroll View").GetComponent<ScrollRect>();
         savedStudiesCancelButton.onClick.AddListener(() => savedStudiesPanel.SetActive(false));
@@ -112,7 +112,8 @@ public class ConductTrial : MonoBehaviour
             endPanel.SetActive(false);
             introPanel.SetActive(true);
         });
-        timerText = hudPanel.transform.Find("Timer Text").GetComponent<Text>();
+        timerText = hudPanel.transform.Find("Timer Panel").Find("Timer Text").GetComponent<Text>();
+        circleText = participantsPanel.transform.Find("Circle Text").GetComponent<Text>();
     }
     void AddItemsInSavedStudiesScrollRect(DBController dBController)
     {
@@ -294,13 +295,14 @@ public class ConductTrial : MonoBehaviour
         startTicks = System.DateTime.Now.Ticks;
         participantsPanel.SetActive(false);
         baselinePanel.SetActive(true);
-        timerSlider.value = 1;
+        //timerSlider.value = 1;
+        hudPanel.transform.Find("Timer Panel").gameObject.SetActive(false);
         float timeLeft = durationForBaseline;
         while (timeLeft > 0)
         {
             timeLeft -= Time.deltaTime;
-            timerSlider.value = timeLeft / durationForBaseline;
-            timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + durationForBaseline.ToString();
+            //timerSlider.value = timeLeft / durationForBaseline;
+            //timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + durationForBaseline.ToString();
             yield return null;
         }
         /*Debug.Log("Time up! " + System.DateTime.Now);
@@ -319,6 +321,14 @@ public class ConductTrial : MonoBehaviour
         baselinePanel.SetActive(false);
         mode = Mode.Normal;
         participantsPanel.transform.Find("Question Text").GetComponent<Text>().text = questions[questionId].questionText;
+        float timerToShowCircleText = 2.00f;
+        circleText.text = "";
+        while (timerToShowCircleText > 0 && !String.IsNullOrEmpty (questions[questionId].circleString)){
+            timerToShowCircleText -= Time.deltaTime;
+            yield return null;
+        }
+        circleText.text = questions[questionId].circleString;
+        hudPanel.transform.Find("Timer Panel").gameObject.SetActive(true);        
         timerSlider.value = 1;
         float timeLeft = durationForQuestion;
         while (timeLeft > 0 && mode == Mode.Normal)
@@ -330,7 +340,7 @@ public class ConductTrial : MonoBehaviour
         }
         //Debug.Log("Time up! " + System.DateTime.Now);
         if (mode == Mode.Normal)
-            SaveAnswer(0);
+            SaveAnswer(Answer.NotGiven);
         questionId++;
         NextQuestion();
     }
@@ -361,13 +371,13 @@ public class ConductTrial : MonoBehaviour
         pupilDataBaselines.Add(pupilDataBaseline);
     }
 
-    void SaveAnswer(int participantAnswer = 0)
+    void SaveAnswer(Answer participantAnswer = Answer.NotGiven)
     {
         Debug.Log(participantAnswer);
         mode = Mode.None;
         long durationInTicks = System.DateTime.Now.Ticks - startTicks;
         //PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questionStrings[questionId], participantAnswer);
-        PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questions[questionId], participantAnswer);
+        PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questions[questionId], participantAnswer, durationInTicks);
         diameterList.Clear();
         pupilDataTrials.Add(pupilDataTrial);
     }
