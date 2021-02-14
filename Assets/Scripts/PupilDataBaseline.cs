@@ -2,7 +2,8 @@ using System;
 [Serializable]
 public class PupilDataBaseline : PupilData
 {
-    float baseLine;
+    float standardDeviation;
+    float mean;
     public PupilDataBaseline(
         float[] _pupilDiameter,
         int _stimuliId,
@@ -12,33 +13,39 @@ public class PupilDataBaseline : PupilData
                                    _startTimeStamp,
                                    _durationInTicks)
     {
+        calculateBaseline();
     }
 
-    private float calculateBaseline()    //  need to calculate with std. daviation
-    {
-        if (pupilDiameter.Length == 0) return 0;
-        /*float total = 0.0f;
-        Array.ForEach(pupilDiameter, val => val += total);
-        baseLine = total / pupilDiameter.Length;*/
+    public float StandardDeviation {
+        get {
+            if (standardDeviation.Equals(null))
+                calculateBaseline();
+            return standardDeviation;
+        }
+    }
+    public float Mean { 
+        get {
+            if (mean.Equals(null))
+                calculateBaseline();
+            return mean;
+        }
+     }
 
-        //mode = Mode.None;
+    private void calculateBaseline()    //  need to calculate with std. daviation
+    {
+        if (pupilDiameter.Length == 0) return;
+        
         float sum = 0;
         Array.ForEach(pupilDiameter, x =>
         {
             sum += x;
         });
-        float mean = sum / pupilDiameter.Length;
+        mean = sum / pupilDiameter.Length;
         sum = 0;
         Array.ForEach(pupilDiameter, x =>
         {
-            sum += (x - mean) * (x - mean);
+            sum += (x - Mean) * (x - Mean);
         });
-        baseLine = (float)Math.Sqrt(sum / pupilDiameter.Length);
-        return baseLine;
-    }
-
-    public float BaseLine
-    {
-        get { return baseLine; }
+        standardDeviation = (float)Math.Sqrt(sum / pupilDiameter.Length);        
     }
 }

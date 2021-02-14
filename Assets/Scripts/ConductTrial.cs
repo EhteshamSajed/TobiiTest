@@ -35,7 +35,7 @@ public class ConductTrial : MonoBehaviour
     [SerializeField]
     GameObject savedStudiesPanel;
     [SerializeField]
-    Image liveFeedback;
+    GameObject liveFeedbackPanel;
     [SerializeField]
     Button button1, button2;
     [SerializeField]
@@ -76,6 +76,8 @@ public class ConductTrial : MonoBehaviour
     ScrollRect savedStudiesScrollRect;
     Text timerText;
     Text circleText;
+    LineRenderer pupilReferenceLineRenderer;
+    LineRenderer liveFeedbackLineRenderer;
 
     // Start is called before the first frame update
     void Awake()
@@ -90,7 +92,25 @@ public class ConductTrial : MonoBehaviour
         dBController = new DBController(DBController.LoadParticipantsList());
         participantsController = new ParticipantsController();
         initUI();
+        DrawCircle(pupilReferenceLineRenderer, 0.02f, 50.00f);
+        DrawCircle(liveFeedbackLineRenderer, 0.005f, 50.00f);
     }
+    private void DrawCircle(LineRenderer _lineRenderer, float _lineWidth, float _radius)
+     {
+         int vertexCount = 40;
+         _lineRenderer.widthMultiplier = _lineWidth;
+ 
+         float deltaTheta = (2.1f * Mathf.PI) / vertexCount;
+         float theta = 0f;
+ 
+         _lineRenderer.positionCount = vertexCount;
+         for (int i=0; i<_lineRenderer.positionCount; i++)
+         {
+             Vector3 pos = new Vector3(_radius * Mathf.Cos(theta), _radius * Mathf.Sin(theta), 0f);
+             _lineRenderer.SetPosition(i, pos);
+             theta += deltaTheta;
+         }
+     }
     void initUI()
     {
         isObserverToggle.onValueChanged.AddListener((isObserver) => ToggleParticipantMode(isObserver));
@@ -114,6 +134,8 @@ public class ConductTrial : MonoBehaviour
         });
         timerText = hudPanel.transform.Find("Timer Panel").Find("Timer Text").GetComponent<Text>();
         circleText = participantsPanel.transform.Find("Circle Text").GetComponent<Text>();
+        pupilReferenceLineRenderer = liveFeedbackPanel.transform.Find("Pupil Reference LineRenderer").GetComponent<LineRenderer>();
+        liveFeedbackLineRenderer = liveFeedbackPanel.transform.Find("Live Feedback LineRenderer").GetComponent<LineRenderer>();
     }
     void AddItemsInSavedStudiesScrollRect(DBController dBController)
     {
@@ -166,7 +188,7 @@ public class ConductTrial : MonoBehaviour
                 diameterList.Add(e.RightEye.Pupil.PupilDiameter);
             }
             currentPupilDiameter = diameterList[diameterList.Count - 1];
-            liveFeedback.rectTransform.sizeDelta = new Vector2(500 * currentPupilDiameter, 500 * currentPupilDiameter);
+            //liveFeedback.rectTransform.sizeDelta = new Vector2(500 * currentPupilDiameter, 500 * currentPupilDiameter);
         }
     }
     void OnApplicationQuit()
@@ -247,7 +269,10 @@ public class ConductTrial : MonoBehaviour
         if (questionId < questions.Length)
         {
             questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questions.Length;
-            StartCoroutine("ShowBaselinePanel");
+            if (questions[questionId].calculateBaseline)
+                StartCoroutine("ShowBaselinePanel");
+            else
+                StartCoroutine("ShowParticipantsQuestion");
         }
         else
         {
@@ -344,24 +369,6 @@ public class ConductTrial : MonoBehaviour
         questionId++;
         NextQuestion();
     }
-    void CalculateBaseline()
-    {
-        mode = Mode.None;
-        float sum = 0;
-        diameterList.ForEach(x =>
-        {
-            sum += x;
-        });
-        float mean = sum / diameterList.Count;
-        sum = 0;
-        diameterList.ForEach(x =>
-        {
-            sum += (x - mean) * (x - mean);
-        });
-        float stdDeviation = (float)Math.Sqrt(sum / diameterList.Count);
-        Debug.Log("stdDeviation: " + stdDeviation);
-        diameterList.Clear();
-    }
     void SaveBaseline()
     {
         mode = Mode.None;
@@ -369,6 +376,8 @@ public class ConductTrial : MonoBehaviour
         PupilDataBaseline pupilDataBaseline = new PupilDataBaseline(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks);
         diameterList.Clear();
         pupilDataBaselines.Add(pupilDataBaseline);
+        Debug.Log (pupilDataBaseline.Mean);
+        Debug.Log (pupilDataBaseline.StandardDeviation);
     }
 
     void SaveAnswer(Answer participantAnswer = Answer.NotGiven)
