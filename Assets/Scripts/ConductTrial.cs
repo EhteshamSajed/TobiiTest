@@ -58,6 +58,8 @@ public class ConductTrial : MonoBehaviour
     FeedbackType feedbackType;
     [SerializeField]
     Sprite[] crossTickSprites;
+    [SerializeField]
+    float pupilsizeFactor;
     Observer observer;
     Participant participant;
     List<float> diameterList = new List<float>();
@@ -78,6 +80,7 @@ public class ConductTrial : MonoBehaviour
     Text circleText;
     LineRenderer pupilReferenceLineRenderer;
     LineRenderer liveFeedbackLineRenderer;
+    //public float refRadius, refWidth, liveRadius, liveWidth;  //  100, 0.4, 120, 0.01
 
     // Start is called before the first frame update
     void Awake()
@@ -92,25 +95,23 @@ public class ConductTrial : MonoBehaviour
         dBController = new DBController(DBController.LoadParticipantsList());
         participantsController = new ParticipantsController();
         initUI();
-        DrawCircle(pupilReferenceLineRenderer, 0.02f, 50.00f);
-        DrawCircle(liveFeedbackLineRenderer, 0.005f, 50.00f);
     }
     private void DrawCircle(LineRenderer _lineRenderer, float _lineWidth, float _radius)
-     {
-         int vertexCount = 40;
-         _lineRenderer.widthMultiplier = _lineWidth;
- 
-         float deltaTheta = (2.1f * Mathf.PI) / vertexCount;
-         float theta = 0f;
- 
-         _lineRenderer.positionCount = vertexCount;
-         for (int i=0; i<_lineRenderer.positionCount; i++)
-         {
-             Vector3 pos = new Vector3(_radius * Mathf.Cos(theta), _radius * Mathf.Sin(theta), 0f);
-             _lineRenderer.SetPosition(i, pos);
-             theta += deltaTheta;
-         }
-     }
+    {
+        int vertexCount = 40;
+        _lineRenderer.widthMultiplier = _lineWidth;
+
+        float deltaTheta = (2.1f * Mathf.PI) / vertexCount;
+        float theta = 0f;
+
+        _lineRenderer.positionCount = vertexCount;
+        for (int i = 0; i < _lineRenderer.positionCount; i++)
+        {
+            Vector3 pos = new Vector3(_radius * Mathf.Cos(theta), _radius * Mathf.Sin(theta), 0f);
+            _lineRenderer.SetPosition(i, pos);
+            theta += deltaTheta;
+        }
+    }
     void initUI()
     {
         isObserverToggle.onValueChanged.AddListener((isObserver) => ToggleParticipantMode(isObserver));
@@ -155,7 +156,8 @@ public class ConductTrial : MonoBehaviour
         Transform scrollViewPanelTemplate = savedStudiesScrollRect.content.Find("Panel").GetComponent<Transform>();
         for (int i = 0; i < trialsRecords.Count; i++)
         {
-            Transform item = (Transform)Instantiate(scrollViewPanelTemplate, new Vector3(), Quaternion.identity);
+            //Transform item = (Transform)Instantiate(scrollViewPanelTemplate, new Vector3(), Quaternion.identity);
+            Transform item = (Transform)Instantiate(scrollViewPanelTemplate);
             item.Find("Serial Text").GetComponent<Text>().text = (i + 1).ToString();
             item.Find("ID Text").GetComponent<Text>().text = trialsRecords[i].id.ToString();
             item.Find("Time Text").GetComponent<Text>().text = (UnixTimeStampToDateTime(trialsRecords[i].id)).ToString();
@@ -189,6 +191,7 @@ public class ConductTrial : MonoBehaviour
             }
             currentPupilDiameter = diameterList[diameterList.Count - 1];
             //liveFeedback.rectTransform.sizeDelta = new Vector2(500 * currentPupilDiameter, 500 * currentPupilDiameter);
+            DrawCircle(liveFeedbackLineRenderer, 0.05f, currentPupilDiameter * pupilsizeFactor);
         }
     }
     void OnApplicationQuit()
@@ -344,16 +347,25 @@ public class ConductTrial : MonoBehaviour
         mode = Mode.Normal;
         participantsPanel.SetActive(true);
         baselinePanel.SetActive(false);
+        liveFeedbackPanel.SetActive(false);
         mode = Mode.Normal;
         participantsPanel.transform.Find("Question Text").GetComponent<Text>().text = questions[questionId].questionText;
+        if (questions[questionId].condition == Condition.Free)
+            participantsPanel.transform.Find("Question Text").GetComponent<Text>().color = Color.black;
+        else if (questions[questionId].condition == Condition.True)
+            participantsPanel.transform.Find("Question Text").GetComponent<Text>().color = Color.blue;
+        else
+            participantsPanel.transform.Find("Question Text").GetComponent<Text>().color = Color.red;
         float timerToShowCircleText = 2.00f;
         circleText.text = "";
-        while (timerToShowCircleText > 0 && !String.IsNullOrEmpty (questions[questionId].circleString)){
+        while (timerToShowCircleText > 0 && !String.IsNullOrEmpty(questions[questionId].circleString))
+        {
             timerToShowCircleText -= Time.deltaTime;
             yield return null;
         }
+        liveFeedbackPanel.SetActive(true);
         circleText.text = questions[questionId].circleString;
-        hudPanel.transform.Find("Timer Panel").gameObject.SetActive(true);        
+        hudPanel.transform.Find("Timer Panel").gameObject.SetActive(true);
         timerSlider.value = 1;
         float timeLeft = durationForQuestion;
         while (timeLeft > 0 && mode == Mode.Normal)
@@ -376,8 +388,11 @@ public class ConductTrial : MonoBehaviour
         PupilDataBaseline pupilDataBaseline = new PupilDataBaseline(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks);
         diameterList.Clear();
         pupilDataBaselines.Add(pupilDataBaseline);
-        Debug.Log (pupilDataBaseline.Mean);
-        Debug.Log (pupilDataBaseline.StandardDeviation);
+        Debug.Log(pupilDataBaseline.Mean);
+        Debug.Log(pupilDataBaseline.StandardDeviation);
+        Debug.Log(JsonUtility.ToJson(pupilDataBaseline));
+        DrawCircle(pupilReferenceLineRenderer, pupilDataBaseline.StandardDeviation * 5, pupilDataBaseline.Mean * pupilsizeFactor);
+        //DrawCircle(pupilReferenceLineRenderer, 0.1f, pupilDataBaseline.Mean * pupilsizeFactor);
     }
 
     void SaveAnswer(Answer participantAnswer = Answer.NotGiven)

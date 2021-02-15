@@ -795,7 +795,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Option 2
+  m_Text: No
 --- !u!222 &163968707
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -821,7 +821,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &233771272
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1763,12 +1763,12 @@ MonoBehaviour:
     calculateBaseline: 1
   - questionText: Is the number shown in circle greater than 5?
     circleString: 8
-    condition: 0
+    condition: 1
     realAnswer: 0
     calculateBaseline: 0
   - questionText: Is the number shown in circle greater than 5?
     circleString: 
-    condition: 0
+    condition: 2
     realAnswer: 0
     calculateBaseline: 0
   durationForQuestion: 2
@@ -1777,6 +1777,7 @@ MonoBehaviour:
   crossTickSprites:
   - {fileID: -5296726963369395002, guid: e00c0a32d4a951945920de0742433ac9, type: 3}
   - {fileID: 5924648078478818265, guid: e00c0a32d4a951945920de0742433ac9, type: 3}
+  pupilsizeFactor: 250
 --- !u!1 &528490451
 GameObject:
   m_ObjectHideFlags: 0
@@ -6789,7 +6790,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1854780264
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7851,7 +7852,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Option 1
+  m_Text: Yes
 --- !u!222 &2066017130
 CanvasRenderer:
   m_ObjectHideFlags: 0
