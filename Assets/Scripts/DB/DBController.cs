@@ -15,7 +15,8 @@ public class DBController
     }
     public static DBController LoadDBController()
     {
-        string jsonString = "";  //  default, if file not found
+        //string jsonString = "";  //  default, if file not found
+        string jsonString = FileManager.LoadFile("_ParticipantsRecord.dat");
         if (JsonUtility.FromJson<DBController>(jsonString) == null)
             return new DBController();
         return JsonUtility.FromJson<DBController>(jsonString);
@@ -33,6 +34,7 @@ public class DBController
     {
         string jsonString = JsonUtility.ToJson(this);
         Debug.Log(jsonString);
+        FileManager.SaveFile("_ParticipantsRecord.dat", jsonString);
     }
     public void AddParticipantsRecord(ParticipantsRecord participantsRecord)
     {
@@ -48,6 +50,10 @@ public class DBController
     public ParticipantsRecord GetParticipantsRecordByName(string name)
     {
         return participantsRecordList.Find(participantsRecord => participantsRecord.participantName == name);
+    }
+    public ParticipantsRecord GetParticipantsRecordByTrialId(long id)
+    {
+        return participantsRecordList.Find(participantsRecord => participantsRecord.TrialsRecordExists(id));
     }
 
     public static void TestJSON()

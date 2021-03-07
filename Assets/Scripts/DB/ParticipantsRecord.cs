@@ -33,4 +33,7 @@ public class ParticipantsRecord{
         }
         trialsRecords = trialsRecordsList.ToArray();
     }
+    public bool TrialsRecordExists(long id){
+        return Array.Exists(trialsRecords, trialsRecord => trialsRecord.id == id);
+    }
 }

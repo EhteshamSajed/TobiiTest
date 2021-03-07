@@ -38,6 +38,7 @@
   <ItemGroup>
      <Compile Include="Assets\TobiiPro\VR\Scripts\Utility\VRPositioningPlacementCanvas.cs" />
      <Compile Include="Assets\TobiiPro\VR\Scripts\VREyeTracker.cs" />
+     <Compile Include="Assets\Scripts\Question.cs" />
      <Compile Include="Assets\Scripts\DB\ParticipantsRecord.cs" />
      <Compile Include="Assets\Scripts\PupilDataBaseline.cs" />
      <Compile Include="Assets\Scripts\ConductTrial.cs" />
@@ -83,7 +84,7 @@
      <Compile Include="Assets\TobiiPro\VR\Scripts\Utility\VRCalibration.cs" />
      <Compile Include="Assets\Scripts\TobiiTest.cs" />
      <Compile Include="Assets\Scripts\DummyEyetracker\DummyEyeTracker.cs" />
-     <Compile Include="Assets\Scripts\Question.cs" />
+     <Compile Include="Assets\Scripts\DB\FileManager.cs" />
      <None Include="Assets\TobiiPro\Examples\VRDemo\Scenes\readme.txt" />
      <None Include="Assets\TobiiPro\Examples\VRDemo\readme.txt" />
      <None Include="Assets\TobiiPro\tobii_pro_prefabs.txt" />
