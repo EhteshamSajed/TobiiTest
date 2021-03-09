@@ -95,6 +95,7 @@ public class ConductTrial : MonoBehaviour
         dBController = new DBController(DBController.LoadParticipantsList());
         participantsController = new ParticipantsController();
         initUI();
+        Debug.Log(TimeSpan.FromTicks(20060090).TotalSeconds / 20);
     }
     private void DrawCircle(LineRenderer _lineRenderer, float _lineWidth, float _radius)
     {
@@ -195,6 +196,16 @@ public class ConductTrial : MonoBehaviour
             DrawCircle(liveFeedbackLineRenderer, 0.05f, currentPupilDiameter * pupilsizeFactor);
         }
     }
+    private IEnumerator SimulatePupilDiameter(float[] pupilDiameter, long _elapseTicksToAnswer)
+    {
+        double wait = TimeSpan.FromTicks(_elapseTicksToAnswer).TotalSeconds / pupilDiameter.Length;
+        for (int i = 0; i < pupilDiameter.Length; i++)
+        {
+            DrawCircle(liveFeedbackLineRenderer, 0.05f, pupilDiameter[i] * pupilsizeFactor);
+            yield return new WaitForSeconds((float)wait);
+        }
+        yield return null;
+    }
     void OnApplicationQuit()
     {
         if (eyeTracker != null)
@@ -251,8 +262,8 @@ public class ConductTrial : MonoBehaviour
         Debug.Log(trialsRecord.id);
         savedStudiesPanel.SetActive(false);
         trialIdInputField.text = trialsRecord.id.ToString();
-        trial = ParticipantsController.LoadParticipantbyParticipantId (dBController.GetParticipantsRecordByTrialId(trialsRecord.id).participantId).GetTrial(trialsRecord.id);
-        Debug.Log (trial.trialId);
+        trial = ParticipantsController.LoadParticipantbyParticipantId(dBController.GetParticipantsRecordByTrialId(trialsRecord.id).participantId).GetTrial(trialsRecord.id);
+        Debug.Log(trial.trialId);
     }
     public void StartTest()
     {
@@ -288,25 +299,6 @@ public class ConductTrial : MonoBehaviour
                 SaveSession();
             }
         }
-    }
-    void SaveSession()
-    {
-        trial = new Trial(DateTimeToUnixTimeStamp(System.DateTime.Now), feedbackType, pupilDataBaselines.ToArray(), pupilDataTrials.ToArray());
-        participant.AddTrial(trial);
-        participantsController.AddParticipant(participant);
-        ParticipantsController.SaveParticipant(participant);
-
-        TrialsRecord trialsRecord = new TrialsRecord(trial.trialId, feedbackType, isObserver);
-        ParticipantsRecord participantsRecord = dBController.GetParticipantsRecordByName(participant.participantName);
-        if (participantsRecord == null)
-            participantsRecord = new ParticipantsRecord(participant.participantName, participant.participantsId);
-        participantsRecord.AddTrialsRecord(trialsRecord);
-        dBController.AddParticipantsRecord(participantsRecord);
-        dBController.SaveParticipantsList();
-
-        introPanel.SetActive(false);
-        participantsPanel.SetActive(false);
-        endPanel.SetActive(true);
     }
     IEnumerator ShowBaselinePanel()
     {
@@ -347,7 +339,7 @@ public class ConductTrial : MonoBehaviour
     {
         /*Debug.Log("Wait for " + durationForQuestion);
         Debug.Log("Time starts! " + System.DateTime.Now);*/
-        mode = Mode.Normal;
+        mode = Mode.None;
         participantsPanel.SetActive(true);
         baselinePanel.SetActive(false);
         liveFeedbackPanel.SetActive(false);
@@ -355,7 +347,6 @@ public class ConductTrial : MonoBehaviour
         button2.gameObject.SetActive(false);
         button1.interactable = false;
         button2.interactable = false;
-        mode = Mode.Normal;
         participantsPanel.transform.Find("Question Text").GetComponent<Text>().text = questions[questionId].questionText;
         if (questions[questionId].condition == Condition.Free)
             participantsPanel.transform.Find("Question Text").GetComponent<Text>().color = Color.black;
@@ -371,6 +362,7 @@ public class ConductTrial : MonoBehaviour
             yield return null;
         }
         startTicks = System.DateTime.Now.Ticks;
+        mode = Mode.Normal;
         liveFeedbackPanel.SetActive(true);
         circleText.text = questions[questionId].circleString;
         hudPanel.transform.Find("Timer Panel").gameObject.SetActive(true);
@@ -421,6 +413,25 @@ public class ConductTrial : MonoBehaviour
         PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questions[questionId], participantAnswer, durationInTicks);
         diameterList.Clear();
         pupilDataTrials.Add(pupilDataTrial);
+    }
+    void SaveSession()
+    {
+        trial = new Trial(DateTimeToUnixTimeStamp(System.DateTime.Now), feedbackType, pupilDataBaselines.ToArray(), pupilDataTrials.ToArray());
+        participant.AddTrial(trial);
+        participantsController.AddParticipant(participant);
+        ParticipantsController.SaveParticipant(participant);
+
+        TrialsRecord trialsRecord = new TrialsRecord(trial.trialId, feedbackType, isObserver);
+        ParticipantsRecord participantsRecord = dBController.GetParticipantsRecordByName(participant.participantName);
+        if (participantsRecord == null)
+            participantsRecord = new ParticipantsRecord(participant.participantName, participant.participantsId);
+        participantsRecord.AddTrialsRecord(trialsRecord);
+        dBController.AddParticipantsRecord(participantsRecord);
+        dBController.SaveParticipantsList();
+
+        introPanel.SetActive(false);
+        participantsPanel.SetActive(false);
+        endPanel.SetActive(true);
     }
     static long DateTimeToUnixTimeStamp(DateTime dateTime)
     {
