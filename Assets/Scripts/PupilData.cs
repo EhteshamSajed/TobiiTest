@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 [Serializable]
 public abstract class PupilData
@@ -14,5 +15,8 @@ public abstract class PupilData
         stimuliId = _stimuliId;
         startTimeStamp = _startTimeStamp;
         durationInTicks = _durationInTicks;
-    }
+    }    
+    public override string ToString(){
+        return JsonUtility.ToJson(this);
+    }    
 }
