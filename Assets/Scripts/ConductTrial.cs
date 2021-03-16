@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Tobii.Research;
@@ -258,6 +258,7 @@ public class ConductTrial : MonoBehaviour
             observer = new Observer(id, name);      //load respective trial and assign this onto that trial
             Debug.Log("new observer created");
             trial.observer = observer;
+            DrawCircle(pupilReferenceLineRenderer, trial.pupilDataBaselines[0].StandardDeviation * 5, trial.pupilDataBaselines[0].Mean * pupilsizeFactor);
         }
         else
         {
@@ -480,9 +481,9 @@ public class ConductTrial : MonoBehaviour
     }
     IEnumerator ShowObserverPanel(PupilDataTrial pupilDataTrial)
     {
-        //mode = Mode.None;
         SetupParticipantAndObserverPanel(1);
         participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().text = pupilDataTrial.participantAnswer.ToString();
+        participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().color = Color.yellow;
         SetupQuestionColor(pupilDataTrial.question);
         float timerToShowCircleText = 2.00f;
         circleText.text = "";
@@ -491,14 +492,12 @@ public class ConductTrial : MonoBehaviour
             timerToShowCircleText -= Time.deltaTime;
             yield return null;
         }
-        //startTicks = System.DateTime.Now.Ticks;
-        //mode = Mode.Normal;
         StartCoroutine(SimulatePupilDiameter(pupilDataTrial.pupilDiameter, pupilDataTrial.durationInTicks));
         circleText.text = pupilDataTrial.question.circleString;
         SetupParticipantAndObserverPanel(2);
         timerSlider.value = 1;
         float timeLeft = pupilDataTrial.question.durationForQuestion;
-        //while (timeLeft > 0 && mode == Mode.Normal)
+        StartCoroutine(ChangeQuesrtionColor(TimeSpan.FromTicks(pupilDataTrial.elapseTicksToAnswer).TotalSeconds));
         while (timeLeft > 0)
         {
             timeLeft -= Time.deltaTime;
@@ -506,9 +505,17 @@ public class ConductTrial : MonoBehaviour
             timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + pupilDataTrial.question.durationForQuestion.ToString();
             yield return null;
         }
-        //Debug.Log("Time up! " + System.DateTime.Now);        
         questionId++;
         NextQuestion();
+    }
+    IEnumerator ChangeQuesrtionColor(double timeLeft)
+    {
+        while (timeLeft > 0)
+        {
+            timeLeft -= Time.deltaTime;
+            yield return null;
+        }
+        participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().color = Color.blue;
     }
     static long DateTimeToUnixTimeStamp(DateTime dateTime)
     {

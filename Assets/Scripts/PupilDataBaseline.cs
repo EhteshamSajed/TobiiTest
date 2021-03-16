@@ -18,20 +18,20 @@ public class PupilDataBaseline : PupilData
 
     public float StandardDeviation {
         get {
-            if (standardDeviation.Equals(null))
+            if (standardDeviation.Equals(null) || standardDeviation == 0)
                 calculateBaseline();
             return standardDeviation;
         }
     }
-    public float Mean { 
+    public float Mean {     //  need to calculate with std. daviation
         get {
-            if (mean.Equals(null))
+            if (mean.Equals(null) || mean == 0)
                 calculateBaseline();
             return mean;
         }
      }
 
-    private void calculateBaseline()    //  need to calculate with std. daviation
+    private void calculateBaseline()
     {
         if (pupilDiameter.Length == 0) return;
         
