@@ -15,3 +15,5 @@ public class Observer
         trialId = _trialId; //  load respective trial
     }*/
 }
+
+public enum ObserversPrediction {NotGiven, True, False};

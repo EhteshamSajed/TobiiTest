@@ -8,7 +8,7 @@ public class PupilDataTrial : PupilData
     //public string questionString;   //  to be moved too Question class
     public Answer participantAnswer;   //  use Question.Answer data type
     //public int realAnswer;   //  to be moved too Question class
-    public int observersPrediction;
+    public ObserversPrediction observersPrediction;
     public long elapseTicksToAnswer;
     public PupilDataTrial(
         float[] _pupilDiameter,
@@ -34,7 +34,7 @@ public class PupilDataTrial : PupilData
         Question _question,
         Answer _participantAnswer,
         long _elapseTicksToAnswer,
-        int _observersPrediction) : this(_pupilDiameter,
+        ObserversPrediction _observersPrediction) : this(_pupilDiameter,
                                _stimuliId,
                                _startTimeStamp,
                                _durationInTicks,

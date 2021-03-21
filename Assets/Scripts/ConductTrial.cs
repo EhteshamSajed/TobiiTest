@@ -22,8 +22,6 @@ public class ConductTrial : MonoBehaviour
     [SerializeField]
     InputField nameInputField;
     [SerializeField]
-    InputField idInputField;
-    [SerializeField]
     Dropdown trialTypeDropdown;
     [SerializeField]
     Button proceedButton;
@@ -80,8 +78,9 @@ public class ConductTrial : MonoBehaviour
     LineRenderer pupilReferenceLineRenderer;
     LineRenderer liveFeedbackLineRenderer;
     Trial trial;
+    TrialsRecord trialsRecord;
     long elapseTicksToAnswer;
-    Answer participantAnswer;
+    int participantAnswer;
     // Start is called before the first frame update
     void Awake()
     {
@@ -90,8 +89,6 @@ public class ConductTrial : MonoBehaviour
             eyeTracker = EyeTrackingOperations.FindAllEyeTrackers()[0];
         else
             eyeTracker = gameObject.GetComponent<DummyEyeTracker>();
-        // if (eyeTracker != null)
-        //     eyeTracker.GazeDataReceived += onGazeDataReceived;
         dBController = new DBController(DBController.LoadParticipantsList());
         participantsController = new ParticipantsController();
         initUI();
@@ -116,8 +113,8 @@ public class ConductTrial : MonoBehaviour
     {
         isObserverToggle.onValueChanged.AddListener((isObserver) => ToggleParticipantMode(isObserver));
         proceedButton.onClick.AddListener(StartTest);
-        button1.onClick.AddListener(() => SaveAnswer(Answer.Yes));
-        button2.onClick.AddListener(() => SaveAnswer(Answer.No));
+        button1.onClick.AddListener(() => SaveAnswer(1));
+        button2.onClick.AddListener(() => SaveAnswer(2));
         questionNumberText = hudPanel.transform.Find("Question Number Text").GetComponent<Text>();
         timerSlider = hudPanel.transform.Find("Timer Panel").Find("Timer Slider").GetComponent<Slider>();
         savedStudiesCancelButton = savedStudiesPanel.transform.Find("Cancel Button").GetComponent<Button>();
@@ -137,6 +134,7 @@ public class ConductTrial : MonoBehaviour
         circleText = participantsPanel.transform.Find("Circle Text").GetComponent<Text>();
         pupilReferenceLineRenderer = liveFeedbackPanel.transform.Find("Pupil Reference LineRenderer").GetComponent<LineRenderer>();
         liveFeedbackLineRenderer = liveFeedbackPanel.transform.Find("Live Feedback LineRenderer").GetComponent<LineRenderer>();
+        introPanel.transform.Find("Exit Button").GetComponent<Button>().onClick.AddListener(() => Application.Quit());
     }
     void AddItemsInSavedStudiesScrollRect(DBController dBController)
     {
@@ -156,7 +154,6 @@ public class ConductTrial : MonoBehaviour
         Transform scrollViewPanelTemplate = savedStudiesScrollRect.content.Find("Panel").GetComponent<Transform>();
         for (int i = 0; i < trialsRecords.Count; i++)
         {
-            //Transform item = (Transform)Instantiate(scrollViewPanelTemplate, new Vector3(), Quaternion.identity);
             Transform item = (Transform)Instantiate(scrollViewPanelTemplate);
             item.Find("Serial Text").GetComponent<Text>().text = (i + 1).ToString();
             item.Find("ID Text").GetComponent<Text>().text = trialsRecords[i].id.ToString();
@@ -173,8 +170,6 @@ public class ConductTrial : MonoBehaviour
     }
     private void onGazeDataReceived(object sender, GazeDataEventArgs e)
     {
-        /*if (readPupilDiameter)
-            Debug.Log("Left pupil diameter: " + e.LeftEye.Pupil.PupilDiameter);*/
         if (isObserver) return;
 
         if (mode != Mode.None)
@@ -192,7 +187,6 @@ public class ConductTrial : MonoBehaviour
                 diameterList.Add(e.RightEye.Pupil.PupilDiameter);
             }
             currentPupilDiameter = diameterList[diameterList.Count - 1];
-            //liveFeedback.rectTransform.sizeDelta = new Vector2(500 * currentPupilDiameter, 500 * currentPupilDiameter);
             DrawCircle(liveFeedbackLineRenderer, 0.05f, currentPupilDiameter * pupilsizeFactor);
         }
     }
@@ -240,9 +234,7 @@ public class ConductTrial : MonoBehaviour
     bool CreateParticipantOrObserver()
     {
         string name = nameInputField.text;
-        string id = idInputField.text;
-
-        if (String.IsNullOrEmpty(name) || String.IsNullOrEmpty(id))
+        if (String.IsNullOrEmpty(name))
         {
             return false;
         }
@@ -254,8 +246,7 @@ public class ConductTrial : MonoBehaviour
             {
                 return false;
             }
-            //observer = new Observer(id, name, trialId);
-            observer = new Observer(id, name);      //load respective trial and assign this onto that trial
+            observer = new Observer(DateTimeToUnixTimeStamp(System.DateTime.Now).ToString(), name);
             Debug.Log("new observer created");
             trial.observer = observer;
             DrawCircle(pupilReferenceLineRenderer, trial.pupilDataBaselines[0].StandardDeviation * 5, trial.pupilDataBaselines[0].Mean * pupilsizeFactor);
@@ -272,12 +263,14 @@ public class ConductTrial : MonoBehaviour
         }
         return true;
     }
-    void LoadTrialForObserver(TrialsRecord trialsRecord)
+    void LoadTrialForObserver(TrialsRecord _trialsRecord)
     {
-        Debug.Log(trialsRecord.id);
+        if (_trialsRecord.observed) return;
+        Debug.Log(_trialsRecord.id);
+        trialsRecord = _trialsRecord;
         savedStudiesPanel.SetActive(false);
-        trialIdInputField.text = trialsRecord.id.ToString();
-        trial = ParticipantsController.LoadParticipantbyParticipantId(dBController.GetParticipantsRecordByTrialId(trialsRecord.id).participantId).GetTrial(trialsRecord.id);
+        trialIdInputField.text = _trialsRecord.id.ToString();
+        trial = ParticipantsController.LoadParticipantbyParticipantId(dBController.GetParticipantsRecordByTrialId(_trialsRecord.id).participantId).GetTrial(_trialsRecord.id);
         Debug.Log(trial.trialId);
     }
     public void StartTest()
@@ -304,7 +297,7 @@ public class ConductTrial : MonoBehaviour
         {
             if (isObserver)
             {
-                StartCoroutine(ShowObserverPanel(trial.pupilDataTrials[questionId]));
+                StartCoroutine(ShowObserverPanel());
             }
             else
             {
@@ -319,28 +312,11 @@ public class ConductTrial : MonoBehaviour
         {
             Debug.Log("Completed");
             mode = Mode.None;
-            if (isObserver)
-            {
-            }
-            else
-            {
-                SaveSession();
-            }
+            SaveSession();
         }
     }
     IEnumerator ShowBaselinePanel()
     {
-        /*Debug.Log(UnixTimeStampToDateTime(DateTimeToUnixTimeStamp(new DateTime(2021, 6, 2, 15, 2,2))));
-        Debug.Log(UnixTimeStampToDateTime(DateTimeToUnixTimeStamp(System.DateTime.Now)));
-        Debug.Log("Wait for " + durationForBaseline);
-        Debug.Log("Time starts! " + System.DateTime.Now);
-        Debug.Log(System.DateTime.Now.Ticks);
-        Debug.Log(DateTimeToUnixTimeStamp(System.DateTime.Now));
-        Debug.Log(DateTimeToUnixTimeStamp(DateTime.Now));
-        Debug.Log(DateTimeToUnixTimeStamp(DateTime.UtcNow));
-        Debug.Log(DateTimeOffset.Now.ToUnixTimeSeconds());
-        Debug.Log((DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds);*/
-
         mode = Mode.Baseine;
         startTimeStamp = DateTimeToUnixTimeStamp(System.DateTime.Now);
         startTicks = System.DateTime.Now.Ticks;
@@ -353,10 +329,6 @@ public class ConductTrial : MonoBehaviour
             timeLeft -= Time.deltaTime;
             yield return null;
         }
-        /*Debug.Log("Time up! " + System.DateTime.Now);
-        Debug.Log(System.DateTime.Now.Ticks);
-        Debug.Log(DateTimeToUnixTimeStamp(System.DateTime.Now));
-        Debug.Log(UnixTimeStampToDateTime(DateTimeToUnixTimeStamp(System.DateTime.Now)));*/
         SaveBaseline();
         StartCoroutine("ShowParticipantsQuestion");
     }
@@ -367,17 +339,12 @@ public class ConductTrial : MonoBehaviour
         PupilDataBaseline pupilDataBaseline = new PupilDataBaseline(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks);
         diameterList.Clear();
         pupilDataBaselines.Add(pupilDataBaseline);
-        // Debug.Log(pupilDataBaseline.Mean);
-        // Debug.Log(pupilDataBaseline.StandardDeviation);
-        // Debug.Log(pupilDataBaseline.ToString());
         DrawCircle(pupilReferenceLineRenderer, pupilDataBaseline.StandardDeviation * 5, pupilDataBaseline.Mean * pupilsizeFactor);
     }
     IEnumerator ShowParticipantsQuestion()
     {
-        /*Debug.Log("Wait for " + durationForQuestion);
-        Debug.Log("Time starts! " + System.DateTime.Now);*/
         mode = Mode.None;
-        participantAnswer = Answer.NotGiven;
+        participantAnswer = (int)Answer.NotGiven;
         elapseTicksToAnswer = 0;
         SetupParticipantAndObserverPanel(1);
         SetupQuestionColor(questions[questionId]);
@@ -402,36 +369,35 @@ public class ConductTrial : MonoBehaviour
         }
         mode = Mode.None;
         long durationInTicks = System.DateTime.Now.Ticks - startTicks;
-        PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questions[questionId], participantAnswer, elapseTicksToAnswer);
+        PupilDataTrial pupilDataTrial = new PupilDataTrial(diameterList.ToArray(), questionId, startTimeStamp, durationInTicks, questions[questionId], (Answer)participantAnswer, elapseTicksToAnswer);
         diameterList.Clear();
         pupilDataTrials.Add(pupilDataTrial);
         Debug.Log("pupilDataTrial " + pupilDataTrial.ToString());
         questionId++;
         NextQuestion();
     }
-    void SaveAnswer(Answer _participantAnswer = Answer.NotGiven)
+    void SaveAnswer(int _participantAnswer = 0)
     {
         button1.interactable = false;
         button2.interactable = false;
-        Button b = _participantAnswer == Answer.Yes ? button1 : button2;
+        Button b = _participantAnswer == 1 ? button1 : button2;
         b.image.color = Color.blue;
         elapseTicksToAnswer = System.DateTime.Now.Ticks - startTicks;
         participantAnswer = _participantAnswer;
     }
-    void SavePupilDataTrial(PupilDataTrial pupilDataTrial)
-    {
-        mode = Mode.None;
-        diameterList.Clear();
-        pupilDataTrials.Add(pupilDataTrial);
-    }
     void SaveSession()
     {
-        trial = new Trial(DateTimeToUnixTimeStamp(System.DateTime.Now), feedbackType, pupilDataBaselines.ToArray(), pupilDataTrials.ToArray());
+        if (!isObserver)
+            trial = new Trial(DateTimeToUnixTimeStamp(System.DateTime.Now), feedbackType, pupilDataBaselines.ToArray(), pupilDataTrials.ToArray());
+        else
+            participant = ParticipantsController.GetParticipantByTrial(trial.trialId);
         participant.AddTrial(trial);
         participantsController.AddParticipant(participant);
         ParticipantsController.SaveParticipant(participant);
 
-        TrialsRecord trialsRecord = new TrialsRecord(trial.trialId, feedbackType, isObserver);
+        if (!isObserver)
+            trialsRecord = new TrialsRecord(trial.trialId, feedbackType, isObserver);
+        trialsRecord.observed = isObserver;
         ParticipantsRecord participantsRecord = dBController.GetParticipantsRecordByName(participant.participantName);
         if (participantsRecord == null)
             participantsRecord = new ParticipantsRecord(participant.participantName, participant.participantsId);
@@ -470,7 +436,7 @@ public class ConductTrial : MonoBehaviour
             button1.interactable = true;
             button2.interactable = true;
         }
-        circleText.gameObject.SetActive (circleText.text != "");
+        circleText.gameObject.SetActive(circleText.text != "");
     }
     void SetupQuestionColor(Question question)
     {
@@ -482,31 +448,33 @@ public class ConductTrial : MonoBehaviour
         else
             participantsPanel.transform.Find("Question Text").GetComponent<Text>().color = Color.red;
     }
-    IEnumerator ShowObserverPanel(PupilDataTrial pupilDataTrial)
+    IEnumerator ShowObserverPanel()
     {
         SetupParticipantAndObserverPanel(1);
-        participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().text = pupilDataTrial.participantAnswer.ToString();
+        participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().text = trial.pupilDataTrials[questionId].participantAnswer.ToString();
         participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().color = Color.yellow;
-        SetupQuestionColor(pupilDataTrial.question);
+        SetupQuestionColor(trial.pupilDataTrials[questionId].question);
         float timerToShowCircleText = 2.00f;
-        while (timerToShowCircleText > 0 && !String.IsNullOrEmpty(pupilDataTrial.question.circleString))
+        while (timerToShowCircleText > 0 && !String.IsNullOrEmpty(trial.pupilDataTrials[questionId].question.circleString))
         {
             timerToShowCircleText -= Time.deltaTime;
             yield return null;
         }
-        StartCoroutine(SimulatePupilDiameter(pupilDataTrial.pupilDiameter, pupilDataTrial.durationInTicks));
-        circleText.text = pupilDataTrial.question.circleString;
+        StartCoroutine(SimulatePupilDiameter(trial.pupilDataTrials[questionId].pupilDiameter, trial.pupilDataTrials[questionId].durationInTicks));
+        circleText.text = trial.pupilDataTrials[questionId].question.circleString;
         SetupParticipantAndObserverPanel(2);
         timerSlider.value = 1;
-        float timeLeft = pupilDataTrial.question.durationForQuestion;
-        StartCoroutine(ChangeQuesrtionColor(TimeSpan.FromTicks(pupilDataTrial.elapseTicksToAnswer).TotalSeconds));
+        float timeLeft = trial.pupilDataTrials[questionId].question.durationForQuestion;
+        StartCoroutine(ChangeQuesrtionColor(TimeSpan.FromTicks(trial.pupilDataTrials[questionId].elapseTicksToAnswer).TotalSeconds));
         while (timeLeft > 0)
         {
             timeLeft -= Time.deltaTime;
-            timerSlider.value = timeLeft / pupilDataTrial.question.durationForQuestion;
-            timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + pupilDataTrial.question.durationForQuestion.ToString();
+            timerSlider.value = timeLeft / trial.pupilDataTrials[questionId].question.durationForQuestion;
+            timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + trial.pupilDataTrials[questionId].question.durationForQuestion.ToString();
             yield return null;
         }
+        trial.pupilDataTrials[questionId].observersPrediction = (ObserversPrediction)participantAnswer;
+        Debug.Log("pupilDataTrial " + trial.pupilDataTrials[questionId].ToString());
         questionId++;
         NextQuestion();
     }

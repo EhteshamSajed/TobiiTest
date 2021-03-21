@@ -23,9 +23,9 @@ public class ParticipantsController
             return LoadParticipantbyParticipantId(participantsRecord.participantId);
         return null;
     }
-    // public Participant GetParticipantByTrial(long id){
-    //     return participants.Find(participant => participant.TrialExists(id));
-    // }
+    public static Participant GetParticipantByTrial(long id){
+        return participants.Find(participant => participant.TrialExists(id));
+    }
     public void AddParticipant(Participant _participant)
     {
         if (participants.Exists((participant) => participant.participantName == _participant.participantName))

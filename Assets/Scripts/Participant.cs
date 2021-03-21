@@ -48,7 +48,7 @@ public class Participant
         List<Trial> trialList = new List<Trial>(trials);
         return trialList.Find(item => item.trialId == trialId);
     }
-    // public bool TrialExists(long trialId){
-    //     return Array.Exists(trials, trial => trial.trialId == trialId);
-    // }
+    public bool TrialExists(long trialId){
+        return Array.Exists(trials, trial => trial.trialId == trialId);
+    }
 }
