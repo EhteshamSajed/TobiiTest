@@ -382,7 +382,6 @@ public class ConductTrial : MonoBehaviour
         SetupParticipantAndObserverPanel(1);
         SetupQuestionColor(questions[questionId]);
         float timerToShowCircleText = 2.00f;
-        circleText.text = "";
         while (timerToShowCircleText > 0 && !String.IsNullOrEmpty(questions[questionId].circleString))
         {
             timerToShowCircleText -= Time.deltaTime;
@@ -456,10 +455,13 @@ public class ConductTrial : MonoBehaviour
             button1.interactable = false;
             button2.interactable = false;
             hudPanel.transform.Find("Timer Panel").gameObject.SetActive(false);
+            circleText.transform.Find("Live Feedback").gameObject.SetActive(false);
+            circleText.text = "";
         }
         else if (stage == 2)
         {
-            liveFeedbackPanel.SetActive(true);
+            liveFeedbackPanel.SetActive(feedbackType == FeedbackType.Double || isObserver);
+            circleText.transform.Find("Live Feedback").gameObject.SetActive(!liveFeedbackPanel.activeSelf);
             hudPanel.transform.Find("Timer Panel").gameObject.SetActive(true);
             button1.gameObject.SetActive(true);
             button2.gameObject.SetActive(true);
@@ -468,6 +470,7 @@ public class ConductTrial : MonoBehaviour
             button1.interactable = true;
             button2.interactable = true;
         }
+        circleText.gameObject.SetActive (circleText.text != "");
     }
     void SetupQuestionColor(Question question)
     {
@@ -486,7 +489,6 @@ public class ConductTrial : MonoBehaviour
         participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().color = Color.yellow;
         SetupQuestionColor(pupilDataTrial.question);
         float timerToShowCircleText = 2.00f;
-        circleText.text = "";
         while (timerToShowCircleText > 0 && !String.IsNullOrEmpty(pupilDataTrial.question.circleString))
         {
             timerToShowCircleText -= Time.deltaTime;
