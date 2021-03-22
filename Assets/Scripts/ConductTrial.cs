@@ -63,7 +63,7 @@ public class ConductTrial : MonoBehaviour
     float currentPupilDiameter;
     long startTimeStamp;
     long startTicks;
-    int questionId = 0;
+    int questionId = -1;
     List<PupilDataTrial> pupilDataTrials = new List<PupilDataTrial>();
     List<PupilDataBaseline> pupilDataBaselines = new List<PupilDataBaseline>();
     public static DBController dBController;
@@ -282,7 +282,7 @@ public class ConductTrial : MonoBehaviour
             eyeTracker.GazeDataReceived -= onGazeDataReceived;
             eyeTracker.GazeDataReceived += onGazeDataReceived;
         }
-        questionId = 0;
+        questionId = -1;
         pupilDataBaselines.Clear();
         pupilDataTrials.Clear();
         if (CreateParticipantOrObserver())
@@ -293,19 +293,24 @@ public class ConductTrial : MonoBehaviour
     void NextQuestion()
     {
         introPanel.SetActive(false);
+        questionId++;
         if (questionId < questions.Length)
         {
             if (isObserver)
             {
+                if (trial.pupilDataTrials[questionId].participantAnswer == Answer.NotGiven)
+                {
+                    NextQuestion();
+                    return;
+                }
                 StartCoroutine(ShowObserverPanel());
             }
             else
             {
-                questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questions.Length;
                 if (questions[questionId].calculateBaseline)
-                    StartCoroutine("ShowBaselinePanel");
+                    StartCoroutine(ShowBaselinePanel());
                 else
-                    StartCoroutine("ShowParticipantsQuestion");
+                    StartCoroutine(ShowParticipantsQuestion());
             }
         }
         else
@@ -330,7 +335,7 @@ public class ConductTrial : MonoBehaviour
             yield return null;
         }
         SaveBaseline();
-        StartCoroutine("ShowParticipantsQuestion");
+        StartCoroutine(ShowParticipantsQuestion());
     }
     void SaveBaseline()
     {
@@ -373,7 +378,6 @@ public class ConductTrial : MonoBehaviour
         diameterList.Clear();
         pupilDataTrials.Add(pupilDataTrial);
         Debug.Log("pupilDataTrial " + pupilDataTrial.ToString());
-        questionId++;
         NextQuestion();
     }
     void SaveAnswer(int _participantAnswer = 0)
@@ -423,6 +427,7 @@ public class ConductTrial : MonoBehaviour
             hudPanel.transform.Find("Timer Panel").gameObject.SetActive(false);
             circleText.transform.Find("Live Feedback").gameObject.SetActive(false);
             circleText.text = "";
+            questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questions.Length;
         }
         else if (stage == 2)
         {
@@ -475,7 +480,6 @@ public class ConductTrial : MonoBehaviour
         }
         trial.pupilDataTrials[questionId].observersPrediction = (ObserversPrediction)participantAnswer;
         Debug.Log("pupilDataTrial " + trial.pupilDataTrials[questionId].ToString());
-        questionId++;
         NextQuestion();
     }
     IEnumerator ChangeQuesrtionColor(double timeLeft)
