@@ -40,7 +40,7 @@ public class ConductTrial : MonoBehaviour
     [SerializeField]
     GameObject observerPanel;
     [SerializeField]
-    GameObject hudPanel;
+    GameObject hudPanel, bottomHudPanel;
     [SerializeField]
     GameObject endPanel;
     [SerializeField]
@@ -134,6 +134,8 @@ public class ConductTrial : MonoBehaviour
         circleText = participantsPanel.transform.Find("Circle Text").GetComponent<Text>();
         pupilReferenceLineRenderer = liveFeedbackPanel.transform.Find("Pupil Reference LineRenderer").GetComponent<LineRenderer>();
         liveFeedbackLineRenderer = liveFeedbackPanel.transform.Find("Live Feedback LineRenderer").GetComponent<LineRenderer>();
+        bottomHudPanel.transform.Find("Replay Button").GetComponent<Button>().onClick.AddListener(() => { questionId--; NextQuestion(); });
+        bottomHudPanel.transform.Find("Next Button").GetComponent<Button>().onClick.AddListener(() => { SaveObserversPrediction(); NextQuestion(); });
         introPanel.transform.Find("Exit Button").GetComponent<Button>().onClick.AddListener(() => Application.Quit());
     }
     void AddItemsInSavedStudiesScrollRect(DBController dBController)
@@ -428,6 +430,7 @@ public class ConductTrial : MonoBehaviour
             circleText.transform.Find("Live Feedback").gameObject.SetActive(false);
             circleText.text = "";
             questionNumberText.text = "Question <b>" + (questionId + 1) + "</b>/" + questions.Length;
+            bottomHudPanel.SetActive(false);
         }
         else if (stage == 2)
         {
@@ -478,9 +481,7 @@ public class ConductTrial : MonoBehaviour
             timerText.text = Math.Ceiling(timeLeft).ToString() + "/" + trial.pupilDataTrials[questionId].question.durationForQuestion.ToString();
             yield return null;
         }
-        trial.pupilDataTrials[questionId].observersPrediction = (ObserversPrediction)participantAnswer;
-        Debug.Log("pupilDataTrial " + trial.pupilDataTrials[questionId].ToString());
-        NextQuestion();
+        bottomHudPanel.SetActive(true);
     }
     IEnumerator ChangeQuesrtionColor(double timeLeft)
     {
@@ -490,6 +491,10 @@ public class ConductTrial : MonoBehaviour
             yield return null;
         }
         participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().color = Color.blue;
+    }
+    void SaveObserversPrediction(){
+        trial.pupilDataTrials[questionId].observersPrediction = (ObserversPrediction)participantAnswer;        
+        Debug.Log("pupilDataTrial " + trial.pupilDataTrials[questionId].ToString());
     }
     static long DateTimeToUnixTimeStamp(DateTime dateTime)
     {
