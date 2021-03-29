@@ -30,15 +30,13 @@ public class ConductTrial : MonoBehaviour
     [SerializeField]
     GameObject participantsPanel;
     [SerializeField]
-    GameObject savedStudiesPanel;
+    GameObject savedStudiesPanel, infoPanel;
     [SerializeField]
     GameObject liveFeedbackPanel;
     [SerializeField]
     Button button1, button2;
     [SerializeField]
     GameObject introPanel;
-    [SerializeField]
-    GameObject observerPanel;
     [SerializeField]
     GameObject hudPanel, bottomHudPanel;
     [SerializeField]
@@ -57,6 +55,7 @@ public class ConductTrial : MonoBehaviour
     Sprite[] crossTickSprites;
     [SerializeField]
     float pupilsizeFactor;
+    GameObject transitionImage;
     Observer observer;
     Participant participant;
     List<float> diameterList = new List<float>();
@@ -112,7 +111,14 @@ public class ConductTrial : MonoBehaviour
     void initUI()
     {
         isObserverToggle.onValueChanged.AddListener((isObserver) => ToggleParticipantMode(isObserver));
-        proceedButton.onClick.AddListener(StartTest);
+        //proceedButton.onClick.AddListener(StartTest);
+        proceedButton.onClick.AddListener(() => {
+            infoPanel.SetActive(true);
+            infoPanel.transform.Find("Observer").gameObject.SetActive(isObserver);
+            infoPanel.transform.Find("Participant").gameObject.SetActive(!isObserver);
+        });
+        infoPanel.transform.Find("Start Button").GetComponent<Button>().onClick.AddListener(StartTest);
+        infoPanel.transform.Find("Close Button").GetComponent<Button>().onClick.AddListener(() => {infoPanel.SetActive(false);});
         button1.onClick.AddListener(() => SaveAnswer(1));
         button2.onClick.AddListener(() => SaveAnswer(2));
         questionNumberText = hudPanel.transform.Find("Question Number Text").GetComponent<Text>();
@@ -137,6 +143,7 @@ public class ConductTrial : MonoBehaviour
         bottomHudPanel.transform.Find("Replay Button").GetComponent<Button>().onClick.AddListener(() => { questionId--; NextQuestion(); });
         bottomHudPanel.transform.Find("Next Button").GetComponent<Button>().onClick.AddListener(() => { SaveObserversPrediction(); NextQuestion(); });
         introPanel.transform.Find("Exit Button").GetComponent<Button>().onClick.AddListener(() => Application.Quit());
+        transitionImage = participantsPanel.transform.Find("Intermediate Image").gameObject;
     }
     void AddItemsInSavedStudiesScrollRect(DBController dBController)
     {
@@ -226,13 +233,6 @@ public class ConductTrial : MonoBehaviour
             button2.transform.GetComponentInChildren<Text>().text = "No";
         }
     }
-
-    void StartRealTest()
-    {
-    }
-    void StartDemoTest()
-    {
-    }
     bool CreateParticipantOrObserver()
     {
         string name = nameInputField.text;
@@ -277,6 +277,7 @@ public class ConductTrial : MonoBehaviour
     }
     public void StartTest()
     {
+        infoPanel.SetActive(false);
         if (!isObserver)
         {
             if (eyeTracker == null)
@@ -351,6 +352,14 @@ public class ConductTrial : MonoBehaviour
     IEnumerator ShowParticipantsQuestion()
     {
         mode = Mode.None;
+        transitionImage.SetActive(true);
+        float timerToHideTransitionImage = 1.00f;
+        while (timerToHideTransitionImage > 0)
+        {
+            timerToHideTransitionImage -= Time.deltaTime;
+            yield return null;
+        }
+        transitionImage.SetActive(false);
         participantAnswer = (int)Answer.NotGiven;
         elapseTicksToAnswer = 0;
         SetupParticipantAndObserverPanel(1);
@@ -458,6 +467,14 @@ public class ConductTrial : MonoBehaviour
     }
     IEnumerator ShowObserverPanel()
     {
+        transitionImage.SetActive(true);
+        float timerToHideTransitionImage = 1.00f;
+        while (timerToHideTransitionImage > 0)
+        {
+            timerToHideTransitionImage -= Time.deltaTime;
+            yield return null;
+        }
+        transitionImage.SetActive(false);
         SetupParticipantAndObserverPanel(1);
         participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().text = trial.pupilDataTrials[questionId].participantAnswer.ToString();
         participantsPanel.transform.Find("Participants Answer Text").GetComponent<Text>().color = Color.yellow;
